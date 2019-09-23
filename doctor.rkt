@@ -56,7 +56,7 @@
 
 ; замена лица во фразе			
 (define (change-person phrase)
-        (many-replace-ex2 '((am are)
+        (many-replace-map '((am are)
                         (are am)
                         (i you)
                         (me you)
@@ -94,6 +94,15 @@
           )
       )
     )
+)
+
+; осуществление всех замен в списке lst по ассоциативному списку replacement-pairs через map
+(define (many-replace-map replacement-pairs lst)
+  (map (lambda (x)
+         (let ((key (assoc x replacement-pairs))) ; запоминаем результат поиска элемента по ключу
+           (if key (cadr key) x) ; если нашли, то заменяем на значение пары, иначе оставляем изначальный элемент списка
+         )
+       ) lst)
 )
 
 ; 2й способ генерации ответной реплики -- случайный выбор одной из заготовленных фраз, не связанных с репликой пользователя
