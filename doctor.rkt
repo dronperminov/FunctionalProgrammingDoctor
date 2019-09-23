@@ -56,17 +56,17 @@
 
 ; замена лица во фразе			
 (define (change-person phrase)
-        (many-replace '((am are)
+        (many-replace-ex2 '((am are)
                         (are am)
                         (i you)
                         (me you)
                         (mine yours)
                         (my your)
-						(myself yourself)
+			(myself yourself)
                         (you i)
                         (your my)
                         (yours mine)
-						(yourself myself))
+			(yourself myself))
                       phrase)
  )
   
@@ -83,6 +83,18 @@
                )
          )
   )
+
+; осуществление всех замен в списке lst по ассоциативному списку replacement-pairs
+(define (many-replace-ex2 replacement-pairs lst)
+    (let loop ((lst lst) (res '())) ; стартуем с пустым списком в качестве результата
+      (if (null? lst) ; если прошли исходный список
+          (reverse res) ; реверсим результат
+          (let ((key (assoc (car lst) replacement-pairs))) ; получаем результат поиска ключа в списке пар
+             (loop (cdr lst) (cons (if key (cadr key) (car lst)) res)) ; переходим к следующему элементу списка, попутно добавляя в начало res либо значение пары, либо исходный элемент списка
+          )
+      )
+    )
+)
 
 ; 2й способ генерации ответной реплики -- случайный выбор одной из заготовленных фраз, не связанных с репликой пользователя
 (define (hedge)
