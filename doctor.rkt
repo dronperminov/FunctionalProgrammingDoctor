@@ -7,12 +7,12 @@
 (define (visit-doctor name)
   (printf "Hello, ~a!\n" name)
   (print '(what seems to be the trouble?))
-  (doctor-driver-loop name)
+  (doctor-driver-loop name '())
 )
 
 ; цикл диалога Доктора с пациентом
 ; параметр name -- имя пациента
-(define (doctor-driver-loop name)
+(define (doctor-driver-loop name user-history)
     (newline)
     (print '**) ; доктор ждёт ввода реплики пациента, приглашением к которому является **
     (let ((user-response (read)))
@@ -20,18 +20,19 @@
 	    ((equal? user-response '(goodbye)) ; реплика '(goodbye) служит для выхода из цикла
              (printf "Goodbye, ~a!\n" name)
              (print '(see you next week)))
-            (else (print (reply user-response)) ; иначе Доктор генерирует ответ, печатает его и продолжает цикл
-                  (doctor-driver-loop name)
+            (else (print (reply user-response user-history)) ; иначе Доктор генерирует ответ, печатает его и продолжает цикл
+                  (doctor-driver-loop name (cons user-response user-history))
              )
        )
       )
 )
 
 ; генерация ответной реплики по user-response -- реплике от пользователя 
-(define (reply user-response)
-      (case (random 2) ; с равной вероятностью выбирается один из двух способов построения ответа
+(define (reply user-response user-history)
+      (case (random (if (null? user-history) 2 3)) ; с равной вероятностью выбирается один из двух способов построения ответа
           ((0) (qualifier-answer user-response)) ; 1й способ
           ((1) (hedge))  ; 2й способ
+          ((2) (history-answer user-history)) ; 3й способ
       )
 )
 			
@@ -116,4 +117,9 @@
                        (don't let that distress you)
                        )
          )
+)
+
+; 3й споособ
+(define (history-answer history)
+  (append '(earlier you said that) (change-person (pick-random history)))
 )
