@@ -2,6 +2,46 @@
 #lang scheme/base
 ; В учебных целях используется базовая версия Scheme
 
+; фразы для первого типа генерации ответов
+(define FIRST-PHRASES '(
+    (you seem to think that)
+    (you feel that)
+    (why do you believe that)
+    (why do you say that)
+    (why do you think that)
+    (you are saying that)
+    (why are you telling me that)
+    )
+)
+
+; фразы для второго типа генерации ответов
+(define SECOND-PHRASES '(
+    (please go on)
+    (many people have the same sorts of feelings)
+    (many of my patients have told me the same thing)
+    (please continue)
+    (don't worry)
+    (cool it)
+    (don't let that distress you)
+    )
+)
+
+; словарь замен лиц
+(define PERSON-MAP '(
+    (am are)
+    (are am)
+    (i you)
+    (me you)
+    (mine yours)
+    (my your)
+    (myself yourself)
+    (you i)
+    (your my)
+    (yours mine)
+    (yourself myself)
+    )
+)
+
 ; основная функция, запускающая "Доктора"
 ; параметр endname -- имя пациента, на котором необходимо завершить приём
 ; параметр patients-left -- число оставшихся пациентов
@@ -76,22 +116,6 @@
     )
 )
             
-; 1й способ генерации ответной реплики -- замена лица в реплике пользователя и приписывание к результату нового начала
-(define (qualifier-answer user-response)
-    (append (pick-random '(
-        (you seem to think that)
-        (you feel that)
-        (why do you believe that)
-        (why do you say that)
-        (why do you think that)
-        (you are saying that)
-        (why are you telling me that))
-        )
-        
-        (change-person user-response)
-    )
-)
-
 ; случайный выбор одного из элементов списка lst
 (define (pick-random lst)
     (list-ref lst (random (length lst)))
@@ -99,20 +123,7 @@
 
 ; замена лица во фразе          
 (define (change-person phrase)
-    (many-replace-map '(
-        (am are)
-        (are am)
-        (i you)
-        (me you)
-        (mine yours)
-        (my your)
-        (myself yourself)
-        (you i)
-        (your my)
-        (yours mine)
-        (yourself myself)
-        )
-    phrase)
+    (many-replace-map PERSON-MAP phrase)
  )
 
 ; получение значения pairs по ключу или самого ключа, если его нет
@@ -148,18 +159,16 @@
     (map (lambda (x) (replace replacement-pairs x)) lst) ; для каждого элемента списка выполняем замену
 )
 
+; 1й способ генерации ответной реплики -- замена лица в реплике пользователя и приписывание к результату нового начала
+(define (qualifier-answer user-response)
+    (append (pick-random FIRST-PHRASES)
+        (change-person user-response)
+    )
+)
+
 ; 2й способ генерации ответной реплики -- случайный выбор одной из заготовленных фраз, не связанных с репликой пользователя
 (define (hedge)
-    (pick-random '(
-        (please go on)
-        (many people have the same sorts of feelings)
-        (many of my patients have told me the same thing)
-        (please continue)
-        (don't worry)
-        (cool it)
-        (don't let that distress you)
-        )
-    )
+    (pick-random SECOND-PHRASES)
 )
 
 ; 3й споособ
