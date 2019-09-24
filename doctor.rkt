@@ -42,6 +42,39 @@
     )
 )
 
+; группы ответов для четвёртого типа генерации оветов
+; каждый элемент списка - список ключевых слов и список списков ответов
+(define KEYWORDS-PHRASES '(
+    (
+        (depressed suicide exams university)
+        ( 
+            (when you feel depressed, go out for ice cream)
+            (depression is a disease that can be treated)
+        )
+    )
+
+    (
+        (mother father parents brother sister uncle ant grandma grandpa)
+        (
+            (tell me more about your * , i want to know all about your *)
+            (why do you feel that way about your * ?)
+        )
+    )
+
+    (
+        (university scheme lections)
+        (
+            (your education is important)
+            (how many time do you spend to learning ?)
+        )
+    )
+)
+)
+
+; уникальные ключевые слова
+; TODO: по возможности оптимизировать
+(define KEYWORDS (foldl (lambda (x y) (cons x (filter (lambda (z) (not (equal? x z))) y))) '() (foldl (lambda (x y) (append (car x) y)) '() KEYWORDS-PHRASES)))
+
 ; Блок 2, задание 5
 ; основная функция, запускающая "Доктора"
 ; параметр endname -- имя пациента, на котором необходимо завершить приём
@@ -115,10 +148,21 @@
 ; Блок 3, задание 4
 ; генерация ответной реплики по user-response -- реплике от пользователя 
 (define (reply user-response user-history)
-    (case (random (if (null? user-history) 2 3)) ; с равной вероятностью выбирается один из двух способов построения ответа
-        ((0) (qualifier-answer user-response)) ; 1й способ
-        ((1) (hedge))  ; 2й способ
-        ((2) (history-answer user-history)) ; 3й способ
+    (let*(
+            (have-history (not (null? user-history))) ; есть ли история
+            (keywords (filter (lambda (x) (ormap (lambda (y) (equal? y x)) KEYWORDS)) user-response)) ; получаем все ключевые слова из фразы
+            (have-keywords (not (null? keywords))) ; есть ли хоть одно ключевое слово в списках
+            (func-count (+ 2 (if have-history 1 0) (if have-keywords 1 0))) ; количество функций для генерации рандома
+            (func-index (random func-count)) ; индекс случайной функции
+        )
+
+        (print keywords)
+        (case func-index ; с равной вероятностью выбирается один из двух способов построения ответа
+            ((0) (qualifier-answer user-response)) ; 1й способ
+            ((1) (hedge))  ; 2й способ
+            ((2) (if have-history (history-answer user-history) (keywords-answer user-response keywords))) ; 3й способ (или 4 способ)
+            ((3) (keywords-answer user-response keywords))
+        )
     )
 )
             
@@ -169,6 +213,23 @@
     (map (lambda (x) (replace replacement-pairs x)) lst) ; для каждого элемента списка выполняем замену
 )
 
+; получение списка индексов групп, в которых есть ключевое слово keyword
+(define (get-group-indexes keyword)
+    (let loop ((lst KEYWORDS-PHRASES) (index 0) (res '()))
+        (cond
+            ((null? lst) res) ; пройдя по списку, возвращаем результат
+            (else
+                (loop (cdr lst) (add1 index)
+                      (if (ormap (lambda (x) (equal? x keyword)) (car (car lst))) ; если ключ есть в какой-то группе
+                          (cons index res) ; то добавляем индекс в список
+                          res ; иначе осталвяем без изменений
+                      )
+                )
+            )
+        )
+    )
+)
+
 ; 1й способ генерации ответной реплики -- замена лица в реплике пользователя и приписывание к результату нового начала
 (define (qualifier-answer user-response)
     (append (pick-random FIRST-PHRASES)
@@ -185,4 +246,19 @@
 ; 3й споособ
 (define (history-answer history)
     (append '(earlier you said that) (change-person (pick-random history)))
+)
+
+; Блок 2, задание 6
+; 4й способ генерации ответа -- случайный выбор шаблона по ключевым словам
+(define (keywords-answer response keywords)
+    (let* (
+            (keyword (pick-random keywords))
+            (indexes (get-group-indexes keyword)) ; индексы групп, в которых есть ключевое слово keyword
+            (group (list-ref KEYWORDS-PHRASES (pick-random indexes))) ; случайно выбранная группа
+            (template (pick-random(list-ref group 1))) ; случайно выбранный шаблон группы
+         )
+
+         ;(map (lambda (x) (if (equal? x '*) keyword x)) template) ; этот вариант поэффективнее будет, но, увы, в задании требуется использовать существующую стратегию замен
+         (many-replace-map (list (list '* keyword)) template)
+    )
 )
