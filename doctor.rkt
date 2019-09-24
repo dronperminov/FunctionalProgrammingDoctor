@@ -3,11 +3,50 @@
 ; В учебных целях используется базовая версия Scheme
 
 ; основная функция, запускающая "Доктора"
-; параметр name -- имя пациента
-(define (visit-doctor name)
-    (printf "Hello, ~a!\n" name)
-    (print '(what seems to be the trouble?))
-    (doctor-driver-loop name '())
+; параметр endname -- имя пациента, на котором необходимо завершить приём
+; параметр patients-left -- число оставшихся пациентов
+(define (visit-doctor endname patients-left)
+    (let ((name (process-visit endname patients-left))) ; обрабатываем визит
+        (cond
+            ((boolean? name) ; если завершили визиты
+                (print '(time to go home)) ; уходим домой
+            )
+            (else
+                (printf "Hello, ~a!\n" name)
+                (print '(what seems to be the trouble?))
+                (doctor-driver-loop name '()) ; обрабатываем пациента
+                (visit-doctor endname (sub1 patients-left)) ; переходим к следующему
+            )
+        )
+    )
+)
+
+; обработка визита очередного пациента
+; возвращается #f, если пациенты закончились или имя совпало с завершающим
+; иначе возвращается имя
+(define (process-visit endname patients-left)
+    (cond
+        ((< patients-left 0) (printf "Invalid patients left\n") #f) ; если некорректное число пациентов, то сообщаем об этом
+        ((= patients-left 0) #t) ; если пациенты закончились, то true
+        (else
+            (let ((name (ask-patient-name))) ; спрашиваем имя
+                (if (equal? endname name) ; если совпало с завершающим, то true, иначе само имя
+                    #t
+                    name
+                )
+            )
+        )
+    )
+)
+
+; получение имени пользователя
+(define (ask-patient-name)
+    (begin
+        (println '(next!))
+        (println '(who are you?))
+        (print '**)
+        (car (read))
+    )
 )
 
 ; цикл диалога Доктора с пациентом
@@ -19,7 +58,7 @@
         (cond 
             ((equal? user-response '(goodbye)) ; реплика '(goodbye) служит для выхода из цикла
                 (printf "Goodbye, ~a!\n" name)
-                (print '(see you next week))
+                (printf "see you next week\n")
             )
             (else (print (reply user-response user-history)) ; иначе Доктор генерирует ответ, печатает его и продолжает цикл
                 (doctor-driver-loop name (cons user-response user-history))
