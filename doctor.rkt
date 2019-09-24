@@ -50,6 +50,8 @@
         ( 
             (when you feel depressed, go out for ice cream)
             (depression is a disease that can be treated)
+            (maybe you need some rest?)
+            (you need to spend more time with family or friends)
         )
     )
 
@@ -58,14 +60,36 @@
         (
             (tell me more about your * , i want to know all about your *)
             (why do you feel that way about your * ?)
+            (are you hate your * ?)
+            (are you close with your * ?)
         )
     )
 
     (
-        (university scheme lections)
+        (university scheme lections education)
         (
             (your education is important)
             (how many time do you spend to learning ?)
+            (* is needed you to find a good job in the future)
+            (* is important, but sometimes need rest)
+        )
+    )
+
+    (
+         (relashionship boyfriend girlfriend)
+         (
+             (how long have you been worried about your * ?)
+             (is it your first * ?)
+             (Do your parents know about your *)
+         )
+    )
+
+    (
+        (money buiseness job work)
+        (
+            (* is not the main thing in life)
+            (do your like your job ?)
+            (do not make all money)
         )
     )
 )
@@ -156,7 +180,6 @@
             (func-index (random func-count)) ; индекс случайной функции
         )
 
-        (print keywords)
         (case func-index ; с равной вероятностью выбирается один из двух способов построения ответа
             ((0) (qualifier-answer user-response)) ; 1й способ
             ((1) (hedge))  ; 2й способ
