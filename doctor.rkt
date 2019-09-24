@@ -8,9 +8,9 @@
     (you feel that)
     (why do you believe that)
     (why do you say that)
-    (why do you think that)
-    (you are saying that)
-    (why are you telling me that)
+    (why do you think that)       ; блок 1, задание 1
+    (you are saying that)         ; блок 1, задание 1
+    (why are you telling me that) ; блок 1, задание 1
     )
 )
 
@@ -20,9 +20,9 @@
     (many people have the same sorts of feelings)
     (many of my patients have told me the same thing)
     (please continue)
-    (don't worry)
-    (cool it)
-    (don't let that distress you)
+    (don't worry)                 ; блок 1, задание 1
+    (cool it)                     ; блок 1, задание 1
+    (don't let that distress you) ; блок 1, задание 1
     )
 )
 
@@ -42,6 +42,7 @@
     )
 )
 
+; Блок 2, задание 5
 ; основная функция, запускающая "Доктора"
 ; параметр endname -- имя пациента, на котором необходимо завершить приём
 ; параметр patients-left -- число оставшихся пациентов
@@ -61,6 +62,7 @@
     )
 )
 
+; Блок 2, задание 5
 ; обработка визита очередного пациента
 ; возвращается #f, если пациенты закончились или имя совпало с завершающим
 ; иначе возвращается имя
@@ -79,6 +81,7 @@
     )
 )
 
+; Блок 2, задание 5
 ; получение имени пользователя
 (define (ask-patient-name)
     (begin
@@ -89,8 +92,10 @@
     )
 )
 
+; Блок 3, задание 4
 ; цикл диалога Доктора с пациентом
 ; параметр name -- имя пациента
+; параметр user-history -- история ответов пациентов
 (define (doctor-driver-loop name user-history)
     (newline)
     (print '**) ; доктор ждёт ввода реплики пациента, приглашением к которому является **
@@ -107,6 +112,7 @@
     )
 )
 
+; Блок 3, задание 4
 ; генерация ответной реплики по user-response -- реплике от пользователя 
 (define (reply user-response user-history)
     (case (random (if (null? user-history) 2 3)) ; с равной вероятностью выбирается один из двух способов построения ответа
@@ -127,6 +133,8 @@
  )
 
 ; получение значения pairs по ключу или самого ключа, если его нет
+; параметр pairs -- список пар для замен
+; параметр key -- ключ, по которому производится замена
 (define (replace pairs key)
     (let ((check-key (assoc key pairs))) ; получаем пару, соответствующую ключу
         (if check-key ; если есть такое значение
@@ -144,6 +152,7 @@
     )
 )
 
+; Блок 1, задание 2
 ; осуществление всех замен в списке lst по ассоциативному списку replacement-pairs
 (define (many-replace-ex2 replacement-pairs lst)
     (let loop ((lst lst) (res '())) ; стартуем с пустым списком в качестве результата
@@ -154,6 +163,7 @@
     )
 )
 
+; Блок 1, задание 3
 ; осуществление всех замен в списке lst по ассоциативному списку replacement-pairs через map
 (define (many-replace-map replacement-pairs lst)
     (map (lambda (x) (replace replacement-pairs x)) lst) ; для каждого элемента списка выполняем замену
@@ -171,6 +181,7 @@
     (pick-random SECOND-PHRASES)
 )
 
+; Блок 1, задание 4
 ; 3й споособ
 (define (history-answer history)
     (append '(earlier you said that) (change-person (pick-random history)))
