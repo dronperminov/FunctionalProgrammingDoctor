@@ -70,40 +70,38 @@
 			(yourself myself))
                       phrase)
  )
-  
+
+; получение значения pairs по ключу или самого ключа, если его нет
+(define (replace pairs key)
+  (let ((check-key (assoc key pairs))) ; получаем пару, соответствующую ключу
+      (if check-key ; если есть такое значение
+          (cadr check-key) ; возвращаем его
+          key ; иначе возвращаем исходный ключ
+      )
+  )
+)
+
 ; осуществление всех замен в списке lst по ассоциативному списку replacement-pairs
 (define (many-replace replacement-pairs lst)
-        (cond ((null? lst) lst)
-              (else (let ((pat-rep (assoc (car lst) replacement-pairs))) ; Доктор ищет первый элемент списка в ассоциативном списке замен
-                      (cons (if pat-rep (cadr pat-rep) ; если поиск был удачен, то в начало ответа Доктор пишет замену
-                                (car lst) ; иначе в начале ответа помещается начало списка без изменений
-                            )
-                            (many-replace replacement-pairs (cdr lst)) ; рекурсивно производятся замены в хвосте списка
-                        )
-                     )
-               )
-         )
+        (cond
+          ((null? lst) lst) ; если список пуст, то и возвращать нечего
+          (else (cons (replace replacement-pairs (car lst)) (many-replace replacement-pairs (cdr lst)))) ; иначе добавляем результат замены к результату оставшегося списка
+        )
   )
 
 ; осуществление всех замен в списке lst по ассоциативному списку replacement-pairs
 (define (many-replace-ex2 replacement-pairs lst)
     (let loop ((lst lst) (res '())) ; стартуем с пустым списком в качестве результата
       (if (null? lst) ; если прошли исходный список
-          (reverse res) ; реверсим результат
-          (let ((key (assoc (car lst) replacement-pairs))) ; получаем результат поиска ключа в списке пар
-             (loop (cdr lst) (cons (if key (cadr key) (car lst)) res)) ; переходим к следующему элементу списка, попутно добавляя в начало res либо значение пары, либо исходный элемент списка
-          )
+          (reverse res) ; реверсим результат, ибо добавляли в начало
+          (loop (cdr lst) (cons (replace replacement-pairs (car lst)) res)) ; иначе добавляем в список результат замены и переходим к следующему элементу списка
       )
     )
 )
 
 ; осуществление всех замен в списке lst по ассоциативному списку replacement-pairs через map
 (define (many-replace-map replacement-pairs lst)
-  (map (lambda (x)
-         (let ((key (assoc x replacement-pairs))) ; запоминаем результат поиска элемента по ключу
-           (if key (cadr key) x) ; если нашли, то заменяем на значение пары, иначе оставляем изначальный элемент списка
-         )
-       ) lst)
+  (map (lambda (x) (replace replacement-pairs x)) lst) ; для каждого элемента списка выполняем замену
 )
 
 ; 2й способ генерации ответной реплики -- случайный выбор одной из заготовленных фраз, не связанных с репликой пользователя
