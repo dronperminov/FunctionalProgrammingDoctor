@@ -8,9 +8,9 @@
     (you feel that)
     (why do you believe that)
     (why do you say that)
-    (why do you think that)       ; блок 1, задание 1
-    (you are saying that)         ; блок 1, задание 1
-    (why are you telling me that) ; блок 1, задание 1
+    (why do you think that)
+    (you are saying that)
+    (why are you telling me that)
     )
 )
 
@@ -20,9 +20,9 @@
     (many people have the same sorts of feelings)
     (many of my patients have told me the same thing)
     (please continue)
-    (don't worry)                 ; блок 1, задание 1
-    (cool it)                     ; блок 1, задание 1
-    (don't let that distress you) ; блок 1, задание 1
+    (don't worry)
+    (cool it)
+    (don't let that distress you)
     )
 )
 
@@ -96,10 +96,74 @@
 )
 
 ; уникальные ключевые слова
-; TODO: по возможности оптимизировать
 (define KEYWORDS (foldl (lambda (x y) (cons x (filter (lambda (z) (not (equal? x z))) y))) '() (foldl (lambda (x y) (append (car x) y)) '() KEYWORDS-PHRASES)))
 
-; Блок 2, задание 5
+; постоянная возможность использовать универсальную функцию ответа
+(define (always-applicable response history) #t)
+
+; проверка возможности использовать ответ с историей
+(define (is-history-applicable response history)
+    (not (null? history))
+)
+
+; проверка возможности использовать ответ с ключевыми словами
+(define (is-keywords-applicable response history)
+    (not (null? (filter (lambda (x) (ormap (lambda (y) (equal? y x)) KEYWORDS)) response)))
+)
+
+; 1й способ генерации ответной реплики -- замена лица в реплике пользователя и приписывание к результату нового начала
+(define (qualifier-answer user-response user-history)
+    (append (pick-random FIRST-PHRASES)
+        (change-person user-response)
+    )
+)
+
+; 2й способ генерации ответной реплики -- случайный выбор одной из заготовленных фраз, не связанных с репликой пользователя
+(define (hedge user-response user-history)
+    (pick-random SECOND-PHRASES)
+)
+
+; 3й споособ генерации ответной реплики -- повтор одной из предыдущих реплик пациента
+(define (history-answer user-response user-history)
+    (append '(earlier you said that) (change-person (pick-random user-history)))
+)
+
+; 4й способ генерации ответа -- случайный выбор шаблона по ключевым словам
+(define (keywords-answer user-response user-history)
+    (let* (
+            (keywords (filter (lambda (x) (ormap (lambda (y) (equal? y x)) KEYWORDS)) user-response))
+            (keyword (pick-random keywords))
+            (indexes (get-group-indexes keyword)) ; индексы групп, в которых есть ключевое слово keyword
+            (group (list-ref KEYWORDS-PHRASES (pick-random indexes))) ; случайно выбранная группа
+            (template (pick-random(list-ref group 1))) ; случайно выбранный шаблон группы
+         )
+
+         (map (lambda (x) (if (equal? x '*) keyword x)) template)
+    )
+)
+
+; Блок 3
+; стратегии управления
+(define REPLY-STRATEGIES (list
+    (list always-applicable 1 hedge)
+    (list always-applicable 1 qualifier-answer)
+    (list is-history-applicable 2 history-answer)
+    (list is-keywords-applicable 6 keywords-answer)
+)
+)
+
+; генерация ответной реплики по user-response -- реплике от пользователя 
+(define (reply strategies user-response user-history)
+    (let* (
+            (methods (filter (lambda (x) ((car x) user-response user-history)) strategies)) ; применяемые методы
+            (weights (map (lambda (x) (list-ref x 1)) methods)) ; список весов применяемых стратегий
+            (handlers (map (lambda (x) (list-ref x 2)) methods)) ; список обработчиков применяемых стратегий
+        )
+
+        ((pick-weighted-random handlers weights) user-response user-history)
+    )
+)
+
 ; основная функция, запускающая "Доктора"
 ; параметр endname -- имя пациента, на котором необходимо завершить приём
 ; параметр patients-left -- число оставшихся пациентов
@@ -119,7 +183,6 @@
     )
 )
 
-; Блок 2, задание 5
 ; обработка визита очередного пациента
 ; возвращается #f, если пациенты закончились или имя совпало с завершающим
 ; иначе возвращается имя
@@ -138,7 +201,6 @@
     )
 )
 
-; Блок 2, задание 5
 ; получение имени пользователя
 (define (ask-patient-name)
     (begin
@@ -149,7 +211,6 @@
     )
 )
 
-; Блок 3, задание 4
 ; цикл диалога Доктора с пациентом
 ; параметр name -- имя пациента
 ; параметр user-history -- история ответов пациентов
@@ -162,36 +223,23 @@
                 (printf "Goodbye, ~a!\n" name)
                 (printf "see you next week\n")
             )
-            (else (print (reply user-response user-history)) ; иначе Доктор генерирует ответ, печатает его и продолжает цикл
+            (else (print (reply REPLY-STRATEGIES user-response user-history)) ; иначе Доктор генерирует ответ, печатает его и продолжает цикл
                 (doctor-driver-loop name (cons user-response user-history))
             )
         )
     )
 )
 
-; Блок 3, задание 4
-; генерация ответной реплики по user-response -- реплике от пользователя 
-(define (reply user-response user-history)
-    (let*(
-            (have-history (not (null? user-history))) ; есть ли история
-            (keywords (filter (lambda (x) (ormap (lambda (y) (equal? y x)) KEYWORDS)) user-response)) ; получаем все ключевые слова из фразы
-            (have-keywords (not (null? keywords))) ; есть ли хоть одно ключевое слово в списках
-            (func-count (+ 2 (if have-history 1 0) (if have-keywords 1 0))) ; количество функций для генерации рандома
-            (func-index (random func-count)) ; индекс случайной функции
-        )
-
-        (case func-index ; с равной вероятностью выбирается один из двух способов построения ответа
-            ((0) (qualifier-answer user-response)) ; 1й способ
-            ((1) (hedge))  ; 2й способ
-            ((2) (if have-history (history-answer user-history) (keywords-answer user-response keywords))) ; 3й способ (или 4 способ)
-            ((3) (keywords-answer user-response keywords))
-        )
-    )
-)
-            
 ; случайный выбор одного из элементов списка lst
 (define (pick-random lst)
     (list-ref lst (random (length lst)))
+)
+
+; случайный выбор одного из элементов списка lst  с учётом его веса
+(define (pick-weighted-random lst weights)
+    (let loop ((lst lst) (weights (cdr weights)) (num (add1 (random (apply + weights)))) (n (car weights)))
+        (if (>= n num) (car lst) (loop (cdr lst) (cdr weights) num (+ n (car weights))))
+    )
 )
 
 ; замена лица во фразе          
@@ -219,7 +267,6 @@
     )
 )
 
-; Блок 1, задание 2
 ; осуществление всех замен в списке lst по ассоциативному списку replacement-pairs
 (define (many-replace-ex2 replacement-pairs lst)
     (let loop ((lst lst) (res '())) ; стартуем с пустым списком в качестве результата
@@ -230,7 +277,6 @@
     )
 )
 
-; Блок 1, задание 3
 ; осуществление всех замен в списке lst по ассоциативному списку replacement-pairs через map
 (define (many-replace-map replacement-pairs lst)
     (map (lambda (x) (replace replacement-pairs x)) lst) ; для каждого элемента списка выполняем замену
@@ -250,38 +296,5 @@
                 )
             )
         )
-    )
-)
-
-; 1й способ генерации ответной реплики -- замена лица в реплике пользователя и приписывание к результату нового начала
-(define (qualifier-answer user-response)
-    (append (pick-random FIRST-PHRASES)
-        (change-person user-response)
-    )
-)
-
-; 2й способ генерации ответной реплики -- случайный выбор одной из заготовленных фраз, не связанных с репликой пользователя
-(define (hedge)
-    (pick-random SECOND-PHRASES)
-)
-
-; Блок 1, задание 4
-; 3й споособ
-(define (history-answer history)
-    (append '(earlier you said that) (change-person (pick-random history)))
-)
-
-; Блок 2, задание 6
-; 4й способ генерации ответа -- случайный выбор шаблона по ключевым словам
-(define (keywords-answer response keywords)
-    (let* (
-            (keyword (pick-random keywords))
-            (indexes (get-group-indexes keyword)) ; индексы групп, в которых есть ключевое слово keyword
-            (group (list-ref KEYWORDS-PHRASES (pick-random indexes))) ; случайно выбранная группа
-            (template (pick-random(list-ref group 1))) ; случайно выбранный шаблон группы
-         )
-
-         ;(map (lambda (x) (if (equal? x '*) keyword x)) template) ; этот вариант поэффективнее будет, но, увы, в задании требуется использовать существующую стратегию замен
-         (many-replace-map (list (list '* keyword)) template)
     )
 )
